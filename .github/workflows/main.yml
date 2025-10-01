@@ -29,7 +29,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "myapp.tar"
+          source: "./"
           target: "~/"
 
       # Load and run container on server
