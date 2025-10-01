@@ -1,0 +1,46 @@
+name: Build and Deploy Container
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Build Docker image
+      - name: Build Docker image
+        run: docker build -t myapp:latest .
+
+      # Save image as tar for transfer
+      - name: Save Docker image
+        run: docker save myapp:latest -o myapp.tar
+
+      # Copy image to server
+      - name: Copy Docker image to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "myapp.tar"
+          target: "~/"
+
+      # Load and run container on server
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            docker load -i ~/myapp.tar
+            docker stop myapp || true
+            docker rm myapp || true
+            docker run -d -p 3000:3000 --name myapp myapp:latest
